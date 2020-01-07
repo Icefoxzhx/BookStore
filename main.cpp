@@ -1036,8 +1036,18 @@ void Modify(){
             if(strcmp(ss.c_str(),bk.isbn)==0) continue;
             if(findisbn(ss.c_str())) continue;
         }
-        if(Command[i].find("-name")!=string::npos) continue;
-        if(Command[i].find("-author")!=string::npos) continue;
+        if(Command[i].find("-name")!=string::npos){
+            if(Command[i].find('\"',7)!=string::npos) continue;
+            ++i;
+            while(i<Command.size()&&Command[i].find('\"')==string::npos) ++i;
+            if(i<Command.size()) continue;
+        }
+        if(Command[i].find("-author")!=string::npos){
+            if(Command[i].find('\"',9)!=string::npos) continue;
+            ++i;
+            while(i<Command.size()&&Command[i].find('\"')==string::npos) ++i;
+            if(i<Command.size()) continue;
+        }
         if(Command[i].find("-keyword")!=string::npos) continue;
         if(Command[i].find("-price")!=string::npos) continue;
         puts("Invalid");file.close();return;
@@ -1053,21 +1063,39 @@ void Modify(){
             continue;
         }
         if(Command[i].find("-name")!=string::npos){
-            Command[i]=Command[i].substr(7);
-            Command[i].pop_back();
-            if(strcmp(Command[i].c_str(),bk.name)==0) continue;
-            addname(Command[i].c_str());
+            string ss=Command[i];
+            if(ss.find('\"',7)==string::npos){
+                ++i;
+                while(i<Command.size()&&Command[i].find('\"')==string::npos){
+                    ss+=" ";
+                    ss+=Command[i];
+                    ++i;
+                }
+            }
+            ss=ss.substr(7);
+            ss.pop_back();
+            if(strcmp(ss.c_str(),bk.name)==0) continue;
+            addname(ss.c_str());
             if(strcmp(bk.name,"")!=0) delname(bk.name);
-            strcpy(bk.name,Command[i].c_str());
+            strcpy(bk.name,ss.c_str());
             continue;
         }
         if(Command[i].find("-author")!=string::npos){
-            Command[i]=Command[i].substr(9);
-            Command[i].pop_back();
-            if(strcmp(Command[i].c_str(),bk.author)==0) continue;
-            addauthor(Command[i].c_str());
+            string ss=Command[i];
+            if(ss.find('\"',9)==string::npos){
+                ++i;
+                while(i<Command.size()&&Command[i].find('\"')==string::npos){
+                    ss+=" ";
+                    ss+=Command[i];
+                    ++i;
+                }
+            }
+            ss=ss.substr(9);
+            ss.pop_back();
+            if(strcmp(ss.c_str(),bk.author)==0) continue;
+            addauthor(ss.c_str());
             if(strcmp(bk.author,"")!=0) delauthor(bk.author);
-            strcpy(bk.author,Command[i].c_str());
+            strcpy(bk.author,ss.c_str());
             continue;
         }
         if(Command[i].find("-keyword")!=string::npos){
@@ -1181,7 +1209,7 @@ void Show(){
         Show_finance();
         return;
     }
-    if(Cur_User.rank<1||Command.size()>2){puts("Invalid");return;}
+    if(Cur_User.rank<1){puts("Invalid");return;}
     if(Command[1].find("-ISBN")!=string::npos){
         Command[1]=Command[1].substr(6);
         int p=findisbn(Command[1].c_str());
@@ -1194,12 +1222,28 @@ void Show(){
         return;
     }
     if(Command[1].find("-name")!=string::npos){
+        if(Command[1].find('\"',7)==string::npos){
+            int j=2;
+            while(j<Command.size()&&Command[j].find('\"')==string::npos){
+                Command[1]+=" ";
+                Command[1]+=Command[j];
+                ++j;
+            }
+        }
         Command[1]=Command[1].substr(7);
         Command[1].pop_back();
         findname(Command[1].c_str());
         return;
     }
     if(Command[1].find("-author")!=string::npos){
+        if(Command[1].find('\"',9)==string::npos){
+            int j=2;
+            while(j<Command.size()&&Command[j].find('\"')==string::npos){
+                Command[1]+=" ";
+                Command[1]+=Command[j];
+                ++j;
+            }
+        }
         Command[1]=Command[1].substr(9);
         Command[1].pop_back();
         findauthor(Command[1].c_str());
@@ -1271,20 +1315,24 @@ void Init(){
     Ofile.write(reinterpret_cast<char *>(&tmp8),sizeof(Finance));
     Ofile.close();
 }
-int main(){
-//    freopen("test_data/testcase6.txt","r",stdin);
-//    freopen("a.out","w",stdout);
-    Init();
-//    int cnt=0;
+void Work(istream &Input){
+    ifstream In("user");
+    In.read(reinterpret_cast<char *>(&Cur_User),sizeof(User));
     while(true){
-    //    DisplayUser(cnt++);
-    //    DisplayBook(cnt++);
-    //    DisplayFinance(cnt++);
+        //    DisplayUser(cnt++);
+        //    DisplayBook(cnt++);
+        //    DisplayFinance(cnt++);
         string op;
-        getline(cin,op);
+        getline(Input,op);
         stringstream ss(op);
         Command.clear();
         while(ss>>op) Command.push_back(op);
+        if(Command[0]=="load"){
+            if(Cur_User.rank!=7||Command.size()!=2){puts("Invalid");continue;}
+            ifstream file(Command[1]);
+            Work(file);
+            file.close();
+        }
         if(Command[0]=="exit") break;
         if(Command[0]=="su"){Login();continue;}
         if(Command[0]=="logout"){Logout();continue;}
@@ -1299,6 +1347,15 @@ int main(){
         if(Command[0]=="buy"){Buy();continue;}
         puts("Invalid");
     }
- //   DisplayUser(cnt);
+}
+int main(){
+//    freopen("a.in","r",stdin);
+//    freopen("a.out","w",stdout);
+    ifstream Input("user");
+    if(!Input) Init();
+    else Input.close();
+    Input.open("command.txt");
+    if(Input) Work(Input);
+    else Work(cin);
     return 0;
 }
