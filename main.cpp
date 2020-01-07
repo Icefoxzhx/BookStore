@@ -1271,10 +1271,10 @@ void Init(){
     Ofile.close();
 }
 int main(){
-    freopen("test_data/testcase6.txt","r",stdin);
-    freopen("a.out","w",stdout);
+//   freopen("test_data/testcase6.txt","r",stdin);
+//   freopen("a.out","w",stdout);
     Init();
-    int cnt=0;
+//    int cnt=0;
     while(true){
     //    DisplayUser(cnt++);
     //    DisplayBook(cnt++);
