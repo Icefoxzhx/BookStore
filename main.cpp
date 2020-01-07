@@ -15,7 +15,7 @@
 #include <map>
 
 using namespace std;
-
+#pragma pack(1)
 int const BN=100;
 vector<string>Command;
 
@@ -23,7 +23,7 @@ vector<string>Command;
 
 class User{
 public:
-    char id[32]{},passwd[32]{},name[32]{};
+    char id[33]{},passwd[32]{},name[32]{};
     int rank;
     User(){rank=0;}
     void Logout(){
@@ -200,7 +200,7 @@ void DisplayFinance(int cnt){
 int CurBid=-1;
 class Book{
 public:
-    char isbn[22]{},name[42]{},author[42]{},keyword[70]{};
+    char isbn[24]{},name[44]{},author[44]{},keyword[72]{};
     double price;
     int num;
     explicit Book(const char *_isbn=""){
@@ -230,14 +230,15 @@ struct Isbn{
     char isbn[22]{};
     int Bid;//-1 -- deleted
     Isbn(){
+     //  memset(isbn,0,sizeof(isbn));
         Bid=-1;
     }
     friend bool operator<(const Isbn &a,const Isbn &b){
         return strcmp(a.isbn,b.isbn)<0;
     }
-    void display(){
-        cout<<isbn<<'\t'<<Bid<<endl;
-    }
+//    void display(){
+//        cout<<isbn<<'\t'<<Bid<<endl;
+//    }
 };
 struct Name{
     char name[42]{};
@@ -297,15 +298,15 @@ struct Index_k{
         strcpy(keyword,_);p=__;
     }
 };
-void DisplayIsbn(){
-    cout<<"isbn: "<<endl;
-    ifstream file("isbn");
-    Isbn tmp;
-    while(file.read(reinterpret_cast<char *>(&tmp),sizeof(Isbn))){
-        if(tmp.Bid==-1) break;
-        tmp.display();
-    }
-}
+//void DisplayIsbn(){
+//    cout<<"isbn: "<<endl;
+//    ifstream file("isbn");
+//    Isbn tmp;
+//    while(file.read(reinterpret_cast<char *>(&tmp),sizeof(Isbn))){
+//        if(tmp.Bid==-1) break;
+//        tmp.display();
+//    }
+//}
 int findisbn(const char *_isbn){
     ifstream file("index_i");
     ifstream file1("isbn");
@@ -522,7 +523,7 @@ void addisbn(const char *_isbn){
         if(tmp1.Bid==-1) break;
         a.push_back(tmp1);
     }
-    tmp1.Bid=CurBid;memcpy(tmp1.isbn,_isbn,sizeof(tmp1.isbn));
+    tmp1.Bid=CurBid;strcpy(tmp1.isbn,_isbn);
     a.push_back(tmp1);
     sort(a.begin(),a.end());
     file.read(reinterpret_cast<char *>(&tmp),sizeof(Index_i));
@@ -1225,12 +1226,12 @@ void Init(){
     Ofile.open("book");
     Ofile.close();
 
-    Ofile.open("isbn");
+    Ofile.open("isbn",ios::trunc);
     Isbn tmp;
     for(int i=0;i<BN;++i) Ofile.write(reinterpret_cast<char *>(&tmp),sizeof(Isbn));
     Ofile.close();
 
-    Ofile.open("name");
+    Ofile.open("name",ios::trunc);
     Name tmp1;
     for(int i=0;i<BN;++i) Ofile.write(reinterpret_cast<char *>(&tmp1),sizeof(Name));
     Ofile.close();
@@ -1271,8 +1272,8 @@ void Init(){
     Ofile.close();
 }
 int main(){
-//   freopen("test_data/testcase6.txt","r",stdin);
-//   freopen("a.out","w",stdout);
+//    freopen("test_data/testcase6.txt","r",stdin);
+//    freopen("a.out","w",stdout);
     Init();
 //    int cnt=0;
     while(true){
