@@ -1,2 +1,2 @@
 project(bookstore)
-add_executable(bookstore main.cpp)
+add_executable(code main.cpp)
