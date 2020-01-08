@@ -4,6 +4,7 @@
 ///file: user book finance
 ///isbn name author keyword
 ///index_i index_n index_a index_k
+///user_[userid] log
 #include <cstdio>
 #include <iostream>
 #include <cstring>
@@ -16,11 +17,16 @@
 
 using namespace std;
 #pragma pack(1)
-int const BN=100;
+int const BN=4000;
 vector<string>Command;
 
 ///User:
+struct User_record{
+    char s[100]{};
+};
+struct Log{
 
+};
 class User{
 public:
     char id[33]{},passwd[32]{},name[32]{};
@@ -30,7 +36,16 @@ public:
         rank=0;
     }
     void display(){
-        cout<<right<<id<<"\t"<<left<<setw(20)<<passwd<<"\t"<<left<<name<<'\t'<<rank<<endl;
+        //cout<<right<<id<<"\t"<<left<<setw(20)<<passwd<<"\t"<<left<<name<<'\t'<<rank<<endl;
+        cout<<endl;
+        cout<<name<<endl;
+        string ss="user_"+string(id);
+        ifstream file(ss);
+        User_record tmp{};
+        while(file.read(reinterpret_cast<char *>(&tmp),sizeof(User_record))){
+            cout<<tmp.s<<endl;
+        }
+        cout<<endl;
     }
 }Cur_User;
 void Login(){
@@ -81,6 +96,11 @@ void UserAdd(){
         IOuser.clear(ios::goodbit);
         IOuser.seekp(0,ios::end);
         IOuser.write(reinterpret_cast<char *>(&tmp),sizeof(User));
+        if(_rank>=3){
+            string ss="user_"+Command[1];
+            ofstream file(ss);
+            file.close();
+        }
     }
     IOuser.close();
 }
@@ -158,13 +178,14 @@ void ChangePasswd(){
     IOuser.write(reinterpret_cast<char *>(&tmp),sizeof(User));
     IOuser.close();
 }
-void DisplayUser(int cnt){
-    cout<<cnt<<":"<<endl;
+void DisplayUser(){
+    cout<<endl;
     ifstream Iuser("user");
     User tmp;
     while(Iuser.read(reinterpret_cast<char *>(&tmp),sizeof(User))){
         tmp.display();
     }
+    cout<<endl;
     Iuser.close();
 }
 
@@ -184,19 +205,23 @@ struct Finance{
         cout<<" - "<<fixed<<setprecision(2)<<tout<<endl;
     }
 };
-void DisplayFinance(int cnt){
-    cout<<endl;
-    cout<<cnt<<": "<<endl;
+void DisplayFinance(){
+    cout<<"Finance Report:"<<endl;
     ifstream file("finance");
     Finance tmp;
+    int cnt=-1;
     while(file.read(reinterpret_cast<char *>(&tmp),sizeof(Finance))){
-        tmp.display();
+        ++cnt;
+        cout<<"time: "<<setw(5)<<cnt<<'\t'<<"收入: "<<fixed<<setprecision(2)<<tmp.in<<'\t';
+        cout<<"支出: "<<fixed<<setprecision(2)<<tmp.out<<'\t';
+        cout<<"总收入: "<<fixed<<setprecision(2)<<tmp.tin<<'\t';
+        cout<<"总支出: "<<fixed<<setprecision(2)<<tmp.tout<<endl;
     }
     cout<<endl;
 }
 
 ///Book:
-
+int cnt=0;
 int CurBid=-1;
 class Book{
 public:
@@ -227,7 +252,7 @@ void DisplayBook(int cnt){
     cout<<endl;
 }
 struct Isbn{
-    char isbn[22]{};
+    char isbn[24]{};
     int Bid;//-1 -- deleted
     Isbn(){
      //  memset(isbn,0,sizeof(isbn));
@@ -236,12 +261,12 @@ struct Isbn{
     friend bool operator<(const Isbn &a,const Isbn &b){
         return strcmp(a.isbn,b.isbn)<0;
     }
-//    void display(){
-//        cout<<isbn<<'\t'<<Bid<<endl;
-//    }
+    void display(){
+        cout<<isbn<<'\t'<<Bid<<endl;
+    }
 };
 struct Name{
-    char name[42]{};
+    char name[44]{};
     int Bid;
     Name(){
         Bid=-1;
@@ -251,7 +276,7 @@ struct Name{
     }
 };
 struct Author{
-    char author[42]{};
+    char author[44]{};
     int Bid;
     Author(){
         Bid=-1;
@@ -261,7 +286,7 @@ struct Author{
     }
 };
 struct Keyword{
-    char keyword[70]{};
+    char keyword[44]{};
     int Bid;
     Keyword(){
         Bid=-1;
@@ -271,42 +296,55 @@ struct Keyword{
     }
 };
 struct Index_i{
-    char isbn[22]{};//first key of the block
+    char isbn[24]{};//first key of the block
     int p;//begin position of the block  real size of the block
     explicit Index_i(const char *_="",int __=-1){
         strcpy(isbn,_);p=__;
     }
 };
 struct Index_n{
-    char name[42]{};
+    char name[44]{};
     int p;
     explicit Index_n(const char *_="",int __=-1){
         strcpy(name,_);p=__;
     }
 };
 struct Index_a{
-    char author[42]{};
+    char author[44]{};
     int p;
     explicit Index_a(const char *_="",int __=-1){
         strcpy(author,_);p=__;
     }
 };
 struct Index_k{
-    char keyword[70]{};
+    char keyword[44]{};
     int p;
     explicit Index_k(const char *_="",int __=-1){
         strcpy(keyword,_);p=__;
     }
 };
-//void DisplayIsbn(){
-//    cout<<"isbn: "<<endl;
-//    ifstream file("isbn");
-//    Isbn tmp;
-//    while(file.read(reinterpret_cast<char *>(&tmp),sizeof(Isbn))){
-//        if(tmp.Bid==-1) break;
-//        tmp.display();
-//    }
-//}
+void DisplayIndex_k(){
+    cout<<cnt<<": "<<endl;
+    ifstream file("index_k");
+    ifstream file1("keyword");
+    Index_k tmp;
+    Keyword tmp1;
+    int count=0;
+    while(file.read(reinterpret_cast<char *>(&tmp),sizeof(Index_k))){
+        if(tmp.p==-1) continue;
+        ++count;
+        cout<<count<<'\t'<<tmp.keyword<<'\t'<<tmp.p<<endl;
+        file1.seekg(tmp.p);
+        for(int i=0;i<BN;++i){
+            file1.read(reinterpret_cast<char *>(&tmp1),sizeof(Keyword));
+            if(tmp1.Bid==-1) break;
+            cout<<tmp1.keyword<<'\t'<<tmp1.Bid<<endl;
+        }
+    }
+    cout<<endl;
+    file.close();
+    file1.close();
+}
 int findisbn(const char *_isbn){
     ifstream file("index_i");
     ifstream file1("isbn");
@@ -534,16 +572,16 @@ void addisbn(const char *_isbn){
             b.push_back(a.back());a.pop_back();
         }
         reverse(b.begin(),b.end());
-        a.size();strcpy(tmp.isbn, a[0].isbn);
+        strcpy(tmp.isbn, a[0].isbn);
         file.seekp(file.tellg());
         file.seekp(-sizeof(Index_i),ios::cur);
         file.write(reinterpret_cast<char *>(&tmp),sizeof(Index_i));
         file1.seekp(p);
         for(auto & i : a) file1.write(reinterpret_cast<char *>(&i),sizeof(Isbn));
-        tmp1.Bid=-1;strcpy(tmp1.isbn,"");
+        tmp1.Bid=-1;memset(tmp1.isbn,0,sizeof(tmp1.isbn));
         for(int i=a.size();i<BN;++i) file1.write(reinterpret_cast<char *>(&tmp1),sizeof(Isbn));
         file1.seekp(0,ios::end);
-        b.size();strcpy(tmp.isbn, b[0].isbn);tmp.p=file1.tellp();
+        strcpy(tmp.isbn, b[0].isbn);tmp.p=file1.tellp();
         for(auto & i : b) file1.write(reinterpret_cast<char *>(&i),sizeof(Isbn));
         for(int i=b.size();i<BN;++i) file1.write(reinterpret_cast<char *>(&tmp1),sizeof(Isbn));
         Index_i tmp2;
@@ -551,6 +589,7 @@ void addisbn(const char *_isbn){
             file.write(reinterpret_cast<char *>(&tmp),sizeof(Index_i));
             tmp=tmp2;
         }
+        file.clear(ios::goodbit);
         file.write(reinterpret_cast<char *>(&tmp),sizeof(Index_i));
     }else{
         strcpy(tmp.isbn, a[0].isbn);
@@ -559,7 +598,7 @@ void addisbn(const char *_isbn){
         file.write(reinterpret_cast<char *>(&tmp),sizeof(Index_i));
         file1.seekp(p);
         for(auto & i : a) file1.write(reinterpret_cast<char *>(&i),sizeof(Isbn));
-        tmp1.Bid=-1;strcpy(tmp1.isbn,"");
+        tmp1.Bid=-1;memset(tmp1.isbn,0,sizeof(tmp1.isbn));
         for(int i=a.size();i<BN;++i) file1.write(reinterpret_cast<char *>(&tmp1),sizeof(Isbn));
     }
     file.close();
@@ -607,15 +646,16 @@ void delisbn(const char *_isbn){
             file.write(reinterpret_cast<char *>(&tmp),sizeof(Index_i));
         }
         tmp.p=-1;
+        file.clear(ios::goodbit);
         file.write(reinterpret_cast<char *>(&tmp),sizeof(Index_i));
     }else{
-        a.size();strcpy(tmp.isbn, a[0].isbn);
+        strcpy(tmp.isbn, a[0].isbn);
         file.seekp(file.tellg());
         file.seekp(-sizeof(Index_i),ios::cur);
         file.write(reinterpret_cast<char *>(&tmp),sizeof(Index_i));
         file1.seekp(p);
         for(auto & i : a) file1.write(reinterpret_cast<char *>(&i),sizeof(Isbn));
-        tmp1.Bid=-1;strcpy(tmp1.isbn,"");
+        tmp1.Bid=-1;memset(tmp1.isbn,0,sizeof(tmp1.isbn));
         for(int i=a.size();i<BN;++i) file1.write(reinterpret_cast<char *>(&tmp1),sizeof(Isbn));
     }
     file.close();
@@ -657,20 +697,20 @@ void addname(const char *_name){
     if(a.size()==BN){
         vector<Name>b;
         b.clear();
-        for(int i=0;i<=BN/2;++i){
+        for(int i=0;i<BN/2;++i){
             b.push_back(a.back());a.pop_back();
         }
         reverse(b.begin(),b.end());
-        a.size();strcpy(tmp.name, a[0].name);
+        strcpy(tmp.name, a[0].name);
         file.seekp(file.tellg());
         file.seekp(-sizeof(Index_n),ios::cur);
         file.write(reinterpret_cast<char *>(&tmp),sizeof(Index_n));
         file1.seekp(p);
         for(auto & i : a) file1.write(reinterpret_cast<char *>(&i),sizeof(Name));
-        tmp1.Bid=-1;strcpy(tmp1.name,"");
+        tmp1.Bid=-1;memset(tmp1.name,0,sizeof(tmp1.name));
         for(int i=a.size();i<BN;++i) file1.write(reinterpret_cast<char *>(&tmp1),sizeof(Name));
         file1.seekp(0,ios::end);
-        b.size();strcpy(tmp.name, b[0].name);tmp.p=file1.tellp();
+        strcpy(tmp.name, b[0].name);tmp.p=file1.tellp();
         for(auto & i : b) file1.write(reinterpret_cast<char *>(&i),sizeof(Name));
         for(int i=b.size();i<BN;++i) file1.write(reinterpret_cast<char *>(&tmp1),sizeof(Name));
         Index_n tmp2;
@@ -678,15 +718,16 @@ void addname(const char *_name){
             file.write(reinterpret_cast<char *>(&tmp),sizeof(Index_n));
             tmp=tmp2;
         }
+        file.clear(ios::goodbit);
         file.write(reinterpret_cast<char *>(&tmp),sizeof(Index_n));
     }else{
-        a.size();strcpy(tmp.name, a[0].name);
+        strcpy(tmp.name, a[0].name);
         file.seekp(file.tellg());
         file.seekp(-sizeof(Index_n),ios::cur);
         file.write(reinterpret_cast<char *>(&tmp),sizeof(Index_n));
         file1.seekp(p);
         for(auto & i : a) file1.write(reinterpret_cast<char *>(&i),sizeof(Name));
-        tmp1.Bid=-1;strcpy(tmp1.name,"");
+        tmp1.Bid=-1;memset(tmp1.name,0,sizeof(tmp1.name));
         for(int i=a.size();i<BN;++i) file1.write(reinterpret_cast<char *>(&tmp1),sizeof(Name));
     }
     file.close();
@@ -735,16 +776,17 @@ void delname(const char *_name){
         while(file.read(reinterpret_cast<char *>(&tmp),sizeof(Index_n))){
             file.write(reinterpret_cast<char *>(&tmp),sizeof(Index_n));
         }
+        file.clear(ios::goodbit);
         tmp.p=-1;
         file.write(reinterpret_cast<char *>(&tmp),sizeof(Index_n));
     }else{
-        a.size();strcpy(tmp.name, a[0].name);
+        strcpy(tmp.name, a[0].name);
         file.seekp(file.tellg());
         file.seekp(-sizeof(Index_n),ios::cur);
         file.write(reinterpret_cast<char *>(&tmp),sizeof(Index_n));
         file1.seekp(p);
         for(auto & i : a) file1.write(reinterpret_cast<char *>(&i),sizeof(Name));
-        tmp1.Bid=-1;strcpy(tmp1.name,"");
+        tmp1.Bid=-1;memset(tmp1.name,0,sizeof(tmp1.name));
         for(int i=a.size();i<BN;++i) file1.write(reinterpret_cast<char *>(&tmp1),sizeof(Name));
     }
     file.close();
@@ -790,16 +832,16 @@ void addauthor(const char *_author){
             b.push_back(a.back());a.pop_back();
         }
         reverse(b.begin(),b.end());
-        a.size();strcpy(tmp.author, a[0].author);
+        strcpy(tmp.author, a[0].author);
         file.seekp(file.tellg());
         file.seekp(-sizeof(Index_a),ios::cur);
         file.write(reinterpret_cast<char *>(&tmp),sizeof(Index_a));
         file1.seekp(p);
         for(auto & i : a) file1.write(reinterpret_cast<char *>(&i),sizeof(Author));
-        tmp1.Bid=-1;strcpy(tmp1.author,"");
+        tmp1.Bid=-1;memset(tmp1.author,0,sizeof(tmp1.author));
         for(int i=a.size();i<BN;++i) file1.write(reinterpret_cast<char *>(&tmp1),sizeof(Author));
         file1.seekp(0,ios::end);
-        b.size();strcpy(tmp.author, b[0].author);tmp.p=file1.tellp();
+        strcpy(tmp.author, b[0].author);tmp.p=file1.tellp();
         for(auto & i : b) file1.write(reinterpret_cast<char *>(&i),sizeof(Author));
         for(int i=b.size();i<BN;++i) file1.write(reinterpret_cast<char *>(&tmp1),sizeof(Author));
         Index_a tmp2;
@@ -807,15 +849,16 @@ void addauthor(const char *_author){
             file.write(reinterpret_cast<char *>(&tmp),sizeof(Index_a));
             tmp=tmp2;
         }
+        file.clear(ios::goodbit);
         file.write(reinterpret_cast<char *>(&tmp),sizeof(Index_a));
     }else{
-        a.size();strcpy(tmp.author, a[0].author);
+        strcpy(tmp.author, a[0].author);
         file.seekp(file.tellg());
         file.seekp(-sizeof(Index_a),ios::cur);
         file.write(reinterpret_cast<char *>(&tmp),sizeof(Index_a));
         file1.seekp(p);
         for(auto & i : a) file1.write(reinterpret_cast<char *>(&i),sizeof(Author));
-        tmp1.Bid=-1;strcpy(tmp1.author,"");
+        tmp1.Bid=-1;memset(tmp1.author,0,sizeof(tmp1.author));
         for(int i=a.size();i<BN;++i) file1.write(reinterpret_cast<char *>(&tmp1),sizeof(Author));
     }
     file.close();
@@ -864,10 +907,11 @@ void delauthor(const char *_author){
         while(file.read(reinterpret_cast<char *>(&tmp),sizeof(Index_a))){
             file.write(reinterpret_cast<char *>(&tmp),sizeof(Index_a));
         }
+        file.clear(ios::goodbit);
         tmp.p=-1;
         file.write(reinterpret_cast<char *>(&tmp),sizeof(Index_a));
     }else{
-        a.size();strcpy(tmp.author, a[0].author);
+        strcpy(tmp.author, a[0].author);
         file.seekp(file.tellg());
         file.seekp(-sizeof(Index_a),ios::cur);
         file.write(reinterpret_cast<char *>(&tmp),sizeof(Index_a));
@@ -913,38 +957,51 @@ void addkeyword(const char *_keyword){
     sort(a.begin(),a.end());
     file.read(reinterpret_cast<char *>(&tmp),sizeof(Index_k));
     if(a.size()==BN){
+        ++cnt;
         vector<Keyword>b;
         b.clear();
         for(int i=0;i<=BN/2;++i){
             b.push_back(a.back());a.pop_back();
         }
         reverse(b.begin(),b.end());
-        a.size();strcpy(tmp.keyword, a[0].keyword);
+        strcpy(tmp.keyword, a[0].keyword);
         file.seekp(file.tellg());
         file.seekp(-sizeof(Index_k),ios::cur);
         file.write(reinterpret_cast<char *>(&tmp),sizeof(Index_k));
         file1.seekp(p);
         for(auto & i : a) file1.write(reinterpret_cast<char *>(&i),sizeof(Keyword));
-        tmp1.Bid=-1;strcpy(tmp1.keyword,"");
+        tmp1.Bid=-1;memset(tmp1.keyword,0,sizeof(tmp1.keyword));
         for(int i=a.size();i<BN;++i) file1.write(reinterpret_cast<char *>(&tmp1),sizeof(Keyword));
         file1.seekp(0,ios::end);
-        b.size();strcpy(tmp.keyword, b[0].keyword);tmp.p=file1.tellp();
+     //  if(file1.eof()) puts("!!!");
+     //  cout<<file1.tellp()<<endl;
+        strcpy(tmp.keyword, b[0].keyword);tmp.p=file1.tellp();
         for(auto & i : b) file1.write(reinterpret_cast<char *>(&i),sizeof(Keyword));
+     //   cout<<file1.tellp()<<endl;
         for(int i=b.size();i<BN;++i) file1.write(reinterpret_cast<char *>(&tmp1),sizeof(Keyword));
+     //   cout<<file1.tellp()<<endl;
         Index_k tmp2;
         while(file.read(reinterpret_cast<char *>(&tmp2),sizeof(Index_k))){
             file.write(reinterpret_cast<char *>(&tmp),sizeof(Index_k));
             tmp=tmp2;
         }
+    //    int pp=file.tellp();
+     //   cout<<pp<<endl;
+        file.clear(ios::goodbit);
+     //   pp=file.tellp();
+    //    cout<<pp<<endl;
         file.write(reinterpret_cast<char *>(&tmp),sizeof(Index_k));
+    //    pp=file.tellp();
+    //    cout<<pp<<endl;
+    //    DisplayIndex_k();
     }else{
-        a.size();strcpy(tmp.keyword, a[0].keyword);
+        strcpy(tmp.keyword, a[0].keyword);
         file.seekp(file.tellg());
         file.seekp(-sizeof(Index_k),ios::cur);
         file.write(reinterpret_cast<char *>(&tmp),sizeof(Index_k));
         file1.seekp(p);
         for(auto & i : a) file1.write(reinterpret_cast<char *>(&i),sizeof(Keyword));
-        tmp1.Bid=-1;strcpy(tmp1.keyword,"");
+        tmp1.Bid=-1;memset(tmp1.keyword,0,sizeof(tmp1.keyword));
         for(int i=a.size();i<BN;++i) file1.write(reinterpret_cast<char *>(&tmp1),sizeof(Keyword));
     }
     file.close();
@@ -993,16 +1050,17 @@ void delkeyword(const char *_keyword){
         while(file.read(reinterpret_cast<char *>(&tmp),sizeof(Index_k))){
             file.write(reinterpret_cast<char *>(&tmp),sizeof(Index_k));
         }
+        file.clear(ios::goodbit);
         tmp.p=-1;
         file.write(reinterpret_cast<char *>(&tmp),sizeof(Index_k));
     }else{
-        a.size();strcpy(tmp.keyword, a[0].keyword);
+        strcpy(tmp.keyword, a[0].keyword);
         file.seekp(file.tellg());
         file.seekp(-sizeof(Index_k),ios::cur);
         file.write(reinterpret_cast<char *>(&tmp),sizeof(Index_k));
         file1.seekp(p);
         for(auto & i : a) file1.write(reinterpret_cast<char *>(&i),sizeof(Keyword));
-        tmp1.Bid=-1;strcpy(tmp1.keyword,"");
+        tmp1.Bid=-1;memset(tmp1.keyword,0,sizeof(tmp1.keyword));
         for(int i=a.size();i<BN;++i) file1.write(reinterpret_cast<char *>(&tmp1),sizeof(Keyword));
     }
     file.close();
@@ -1071,6 +1129,8 @@ void Modify(){
                     ss+=Command[i];
                     ++i;
                 }
+                ss+=" ";
+                ss+=Command[i];
             }
             ss=ss.substr(7);
             ss.pop_back();
@@ -1089,6 +1149,8 @@ void Modify(){
                     ss+=Command[i];
                     ++i;
                 }
+                ss+=" ";
+                ss+=Command[i];
             }
             ss=ss.substr(9);
             ss.pop_back();
@@ -1108,11 +1170,15 @@ void Modify(){
                 mp[ss.substr(l,r-l)]=1;
                 l=r+1;
             }
+            mp[ss.substr(l)]=1;
             ss=bk.keyword;
             l=r=0;
-            while((r=ss.find('|',l))!=string::npos){
-                mp[ss.substr(l,r-l)]-=1;
-                l=r+1;
+            if(!ss.empty()){
+                while((r=ss.find('|',l))!=string::npos){
+                    mp[ss.substr(l,r-l)]-=1;
+                    l=r+1;
+                }
+                mp[ss.substr(l)]-=1;
             }
             for(auto & it : mp){
                 if(it.second>0) addkeyword(it.first.c_str());
@@ -1229,6 +1295,8 @@ void Show(){
                 Command[1]+=Command[j];
                 ++j;
             }
+            Command[1]+=" ";
+            Command[1]+=Command[j];
         }
         Command[1]=Command[1].substr(7);
         Command[1].pop_back();
@@ -1243,6 +1311,8 @@ void Show(){
                 Command[1]+=Command[j];
                 ++j;
             }
+            Command[1]+=" ";
+            Command[1]+=Command[j];
         }
         Command[1]=Command[1].substr(9);
         Command[1].pop_back();
@@ -1257,7 +1327,28 @@ void Show(){
     }
     puts("Invalid");
 }
-
+void Report(){
+    if(Command.size()!=2){puts("Invalid");return;}
+    if(Command[1]=="finance"){
+        if(Cur_User.rank!=7){puts("Invalid");return;}
+        DisplayFinance();
+        return;
+    }
+    if(Command[1]=="myself"){
+        if(Cur_User.rank<3){puts("Invalid");return;}
+        Cur_User.display();
+        return;
+    }
+    if(Command[1]=="employee"){
+        if(Cur_User.rank!=7){puts("Invalid");return;}
+        DisplayUser();
+        return;
+    }
+}
+void DisplayLog(){//??
+    DisplayUser();
+    DisplayFinance();
+}
 void Init(){
     strcpy(Cur_User.id,"root");
     strcpy(Cur_User.name,"root");
@@ -1265,6 +1356,9 @@ void Init(){
     Cur_User.rank=7;
     ofstream Ofile("user");
     Ofile.write(reinterpret_cast<char *>(&Cur_User),sizeof(User));
+    Ofile.close();
+
+    Ofile.open("user_root");
     Ofile.close();
 
     Ofile.open("book");
@@ -1318,6 +1412,7 @@ void Init(){
 void Work(istream &Input){
     ifstream In("user");
     In.read(reinterpret_cast<char *>(&Cur_User),sizeof(User));
+    int cnt=0;
     while(true){
         //    DisplayUser(cnt++);
         //    DisplayBook(cnt++);
@@ -1345,6 +1440,8 @@ void Work(istream &Input){
         if(Command[0]=="import"){Import();continue;}
         if(Command[0]=="show"){Show();continue;}
         if(Command[0]=="buy"){Buy();continue;}
+        if(Command[0]=="report"){Report();continue;}
+        if(Command[0]=="log"){DisplayLog();continue;}
         puts("Invalid");
     }
 }
@@ -1359,3 +1456,4 @@ int main(){
     else Work(cin);
     return 0;
 }
+
