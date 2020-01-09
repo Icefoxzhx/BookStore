@@ -17,7 +17,7 @@
 
 using namespace std;
 #pragma pack(1)
-int const BN=4000;
+int const BN=40;
 vector<string>Command;
 
 ///User:
@@ -334,12 +334,62 @@ void DisplayIndex_k(){
         if(tmp.p==-1) continue;
         ++count;
         cout<<count<<'\t'<<tmp.keyword<<'\t'<<tmp.p<<endl;
+        cout<<endl;
         file1.seekg(tmp.p);
         for(int i=0;i<BN;++i){
             file1.read(reinterpret_cast<char *>(&tmp1),sizeof(Keyword));
             if(tmp1.Bid==-1) break;
             cout<<tmp1.keyword<<'\t'<<tmp1.Bid<<endl;
         }
+        cout<<endl;
+    }
+    cout<<endl;
+    file.close();
+    file1.close();
+}
+void DisplayIndex_n(){
+    cout<<cnt<<": "<<endl;
+    ifstream file("index_n");
+    ifstream file1("name");
+    Index_n tmp;
+    Name tmp1;
+    int count=0;
+    while(file.read(reinterpret_cast<char *>(&tmp),sizeof(Index_n))){
+        if(tmp.p==-1) continue;
+        ++count;
+        cout<<count<<'\t'<<tmp.name<<'\t'<<tmp.p<<endl;
+        cout<<endl;
+        file1.seekg(tmp.p);
+        for(int i=0;i<BN;++i){
+            file1.read(reinterpret_cast<char *>(&tmp1),sizeof(Name));
+            if(tmp1.Bid==-1) break;
+            cout<<tmp1.name<<'\t'<<tmp1.Bid<<endl;
+        }
+        cout<<endl;
+    }
+    cout<<endl;
+    file.close();
+    file1.close();
+}
+void DisplayIndex_a(){
+    cout<<cnt<<": "<<endl;
+    ifstream file("index_a");
+    ifstream file1("author");
+    Index_a tmp;
+    Author tmp1;
+    int count=0;
+    while(file.read(reinterpret_cast<char *>(&tmp),sizeof(Index_a))){
+        if(tmp.p==-1) continue;
+        ++count;
+        cout<<count<<'\t'<<tmp.author<<'\t'<<tmp.p<<endl;
+        cout<<endl;
+        file1.seekg(tmp.p);
+        for(int i=0;i<BN;++i){
+            file1.read(reinterpret_cast<char *>(&tmp1),sizeof(Author));
+            if(tmp1.Bid==-1) break;
+            cout<<tmp1.author<<'\t'<<tmp1.Bid<<endl;
+        }
+        cout<<endl;
     }
     cout<<endl;
     file.close();
@@ -381,16 +431,26 @@ void findname(const char *_name){
     Index_n tmp;
     Name tmp1;
     int p=-1;
+    vector<int>a;
     while(file.read(reinterpret_cast<char *>(&tmp),sizeof(Index_n))){
         if(tmp.p<0) continue;
-        if(strcmp(tmp.name,_name)>=0){
+        if(strcmp(tmp.name,_name)>0){
             file.seekg(-sizeof(Index_n),ios::cur);
             break;
+        }
+        if(strcmp(tmp.name,_name)==0&&p>=0){
+            file1.seekg(p);
+            for(int i=0;i<BN;++i){
+                file1.read(reinterpret_cast<char *>(&tmp1),sizeof(Name));
+                if(tmp1.Bid==-1) break;
+                if(strcmp(_name,tmp1.name)==0){
+                    a.push_back(tmp1.Bid);
+                }
+            }
         }
         p=tmp.p;
     }
 
-    vector<int>a;
     if(p<0){p=0;file.read(reinterpret_cast<char *>(&tmp),sizeof(Index_n));}
     if(file.eof()){//last block
         file.clear(ios::goodbit);
@@ -433,16 +493,26 @@ void findauthor(const char *_author){
     Index_a tmp;
     Author tmp1;
     int p=-1;
+    vector<int>a;
     while(file.read(reinterpret_cast<char *>(&tmp),sizeof(Index_a))){
         if(tmp.p<0) continue;
-        if(strcmp(tmp.author,_author)>=0){
+        if(strcmp(tmp.author,_author)>0){
             file.seekg(-sizeof(Index_a),ios::cur);
             break;
+        }
+        if(strcmp(tmp.author,_author)==0&&p>=0){
+            file1.seekg(p);
+            for(int i=0;i<BN;++i){
+                file1.read(reinterpret_cast<char *>(&tmp1),sizeof(Author));
+                if(tmp1.Bid==-1) break;
+                if(strcmp(_author,tmp1.author)==0){
+                    a.push_back(tmp1.Bid);
+                }
+            }
         }
         p=tmp.p;
     }
 
-    vector<int>a;
     if(p<0){p=0;file.read(reinterpret_cast<char *>(&tmp),sizeof(Index_a));}
     if(file.eof()){//last block
         file.clear(ios::goodbit);
@@ -485,16 +555,26 @@ void findkeyword(const char *_keyword){
     Index_k tmp;
     Keyword tmp1;
     int p=-1;
+    vector<int>a;
     while(file.read(reinterpret_cast<char *>(&tmp),sizeof(Index_k))){
         if(tmp.p<0) continue;
-        if(strcmp(tmp.keyword,_keyword)>=0){
+        if(strcmp(tmp.keyword,_keyword)>0){
             file.seekg(-sizeof(Index_k),ios::cur);
             break;
+        }
+        if(strcmp(tmp.keyword,_keyword)==0&&p>=0){
+            file1.seekg(p);
+            for(int i=0;i<BN;++i){
+                file1.read(reinterpret_cast<char *>(&tmp1),sizeof(Keyword));
+                if(tmp1.Bid==-1) break;
+                if(strcmp(_keyword,tmp1.keyword)==0){
+                    a.push_back(tmp1.Bid);
+                }
+            }
         }
         p=tmp.p;
     }
 
-    vector<int>a;
     if(p<0){p=0;file.read(reinterpret_cast<char *>(&tmp),sizeof(Index_k));}
     if(file.eof()){//last block
         file.clear(ios::goodbit);
@@ -585,9 +665,12 @@ void addisbn(const char *_isbn){
         for(auto & i : b) file1.write(reinterpret_cast<char *>(&i),sizeof(Isbn));
         for(int i=b.size();i<BN;++i) file1.write(reinterpret_cast<char *>(&tmp1),sizeof(Isbn));
         Index_i tmp2;
+        p=file.tellg();
         while(file.read(reinterpret_cast<char *>(&tmp2),sizeof(Index_i))){
+            file.seekp(p);
             file.write(reinterpret_cast<char *>(&tmp),sizeof(Index_i));
             tmp=tmp2;
+            p=file.tellg();
         }
         file.clear(ios::goodbit);
         file.write(reinterpret_cast<char *>(&tmp),sizeof(Index_i));
@@ -640,13 +723,14 @@ void delisbn(const char *_isbn){
 
     file.read(reinterpret_cast<char *>(&tmp),sizeof(Index_i));
     if(a.empty()){
-        file.seekp(file.tellg());
-        file.seekp(-sizeof(Index_i),ios::cur);
         while(file.read(reinterpret_cast<char *>(&tmp),sizeof(Index_i))){
+            file.seekp(-sizeof(Index_i)*2,ios::cur);
             file.write(reinterpret_cast<char *>(&tmp),sizeof(Index_i));
+            file.seekg(sizeof(Index_i),ios::cur);
         }
-        tmp.p=-1;
         file.clear(ios::goodbit);
+        tmp.p=-1;
+        file.seekp(-sizeof(Index_i),ios::cur);
         file.write(reinterpret_cast<char *>(&tmp),sizeof(Index_i));
     }else{
         strcpy(tmp.isbn, a[0].isbn);
@@ -714,12 +798,18 @@ void addname(const char *_name){
         for(auto & i : b) file1.write(reinterpret_cast<char *>(&i),sizeof(Name));
         for(int i=b.size();i<BN;++i) file1.write(reinterpret_cast<char *>(&tmp1),sizeof(Name));
         Index_n tmp2;
+        p=file.tellg();
         while(file.read(reinterpret_cast<char *>(&tmp2),sizeof(Index_n))){
+            file.seekp(p);
             file.write(reinterpret_cast<char *>(&tmp),sizeof(Index_n));
             tmp=tmp2;
+            p=file.tellg();
         }
         file.clear(ios::goodbit);
         file.write(reinterpret_cast<char *>(&tmp),sizeof(Index_n));
+        file.close();
+        file1.close();
+    //    DisplayIndex_n();
     }else{
         strcpy(tmp.name, a[0].name);
         file.seekp(file.tellg());
@@ -729,9 +819,10 @@ void addname(const char *_name){
         for(auto & i : a) file1.write(reinterpret_cast<char *>(&i),sizeof(Name));
         tmp1.Bid=-1;memset(tmp1.name,0,sizeof(tmp1.name));
         for(int i=a.size();i<BN;++i) file1.write(reinterpret_cast<char *>(&tmp1),sizeof(Name));
+        file.close();
+        file1.close();
     }
-    file.close();
-    file1.close();
+
 }
 void delname(const char *_name){
     fstream file("index_n");
@@ -771,13 +862,14 @@ void delname(const char *_name){
     }
     
     if(a.empty()){
-        file.seekp(file.tellg());
-        file.seekp(-sizeof(Index_n),ios::cur);
         while(file.read(reinterpret_cast<char *>(&tmp),sizeof(Index_n))){
+            file.seekp(-sizeof(Index_n)*2,ios::cur);
             file.write(reinterpret_cast<char *>(&tmp),sizeof(Index_n));
+            file.seekg(sizeof(Index_n),ios::cur);
         }
         file.clear(ios::goodbit);
         tmp.p=-1;
+        file.seekp(-sizeof(Index_n),ios::cur);
         file.write(reinterpret_cast<char *>(&tmp),sizeof(Index_n));
     }else{
         strcpy(tmp.name, a[0].name);
@@ -826,6 +918,7 @@ void addauthor(const char *_author){
     sort(a.begin(),a.end());
     file.read(reinterpret_cast<char *>(&tmp),sizeof(Index_a));
     if(a.size()==BN){
+    //    ++cnt;
         vector<Author>b;
         b.clear();
         for(int i=0;i<=BN/2;++i){
@@ -845,12 +938,18 @@ void addauthor(const char *_author){
         for(auto & i : b) file1.write(reinterpret_cast<char *>(&i),sizeof(Author));
         for(int i=b.size();i<BN;++i) file1.write(reinterpret_cast<char *>(&tmp1),sizeof(Author));
         Index_a tmp2;
+        p=file.tellg();
         while(file.read(reinterpret_cast<char *>(&tmp2),sizeof(Index_a))){
+            file.seekp(p);
             file.write(reinterpret_cast<char *>(&tmp),sizeof(Index_a));
             tmp=tmp2;
+            p=file.tellg();
         }
         file.clear(ios::goodbit);
         file.write(reinterpret_cast<char *>(&tmp),sizeof(Index_a));
+        file.close();
+        file1.close();
+    //    DisplayIndex_a();
     }else{
         strcpy(tmp.author, a[0].author);
         file.seekp(file.tellg());
@@ -860,9 +959,10 @@ void addauthor(const char *_author){
         for(auto & i : a) file1.write(reinterpret_cast<char *>(&i),sizeof(Author));
         tmp1.Bid=-1;memset(tmp1.author,0,sizeof(tmp1.author));
         for(int i=a.size();i<BN;++i) file1.write(reinterpret_cast<char *>(&tmp1),sizeof(Author));
+        file.close();
+        file1.close();
     }
-    file.close();
-    file1.close();
+
 }
 void delauthor(const char *_author){
     fstream file("index_a");
@@ -902,13 +1002,14 @@ void delauthor(const char *_author){
     }
 
     if(a.empty()){
-        file.seekp(file.tellg());
-        file.seekp(-sizeof(Index_a),ios::cur);
         while(file.read(reinterpret_cast<char *>(&tmp),sizeof(Index_a))){
+            file.seekp(-sizeof(Index_a)*2,ios::cur);
             file.write(reinterpret_cast<char *>(&tmp),sizeof(Index_a));
+            file.seekg(sizeof(Index_a),ios::cur);
         }
         file.clear(ios::goodbit);
         tmp.p=-1;
+        file.seekp(-sizeof(Index_a),ios::cur);
         file.write(reinterpret_cast<char *>(&tmp),sizeof(Index_a));
     }else{
         strcpy(tmp.author, a[0].author);
@@ -957,7 +1058,6 @@ void addkeyword(const char *_keyword){
     sort(a.begin(),a.end());
     file.read(reinterpret_cast<char *>(&tmp),sizeof(Index_k));
     if(a.size()==BN){
-        ++cnt;
         vector<Keyword>b;
         b.clear();
         for(int i=0;i<=BN/2;++i){
@@ -973,27 +1073,33 @@ void addkeyword(const char *_keyword){
         tmp1.Bid=-1;memset(tmp1.keyword,0,sizeof(tmp1.keyword));
         for(int i=a.size();i<BN;++i) file1.write(reinterpret_cast<char *>(&tmp1),sizeof(Keyword));
         file1.seekp(0,ios::end);
-     //  if(file1.eof()) puts("!!!");
-     //  cout<<file1.tellp()<<endl;
         strcpy(tmp.keyword, b[0].keyword);tmp.p=file1.tellp();
         for(auto & i : b) file1.write(reinterpret_cast<char *>(&i),sizeof(Keyword));
-     //   cout<<file1.tellp()<<endl;
         for(int i=b.size();i<BN;++i) file1.write(reinterpret_cast<char *>(&tmp1),sizeof(Keyword));
-     //   cout<<file1.tellp()<<endl;
         Index_k tmp2;
+//        cout<<"g: "<<file.tellg()<<endl;
+//        cout<<"p: "<<file.tellp()<<endl;
+        p=file.tellg();
         while(file.read(reinterpret_cast<char *>(&tmp2),sizeof(Index_k))){
+            file.seekp(p);
+//            cout<<"after read: "<<endl;
+//            cout<<"g: "<<file.tellg()<<endl;
+//            cout<<"p: "<<file.tellp()<<endl;
             file.write(reinterpret_cast<char *>(&tmp),sizeof(Index_k));
+//            cout<<"after write"<<endl;
+//            cout<<"g: "<<file.tellg()<<endl;
+//            cout<<"p: "<<file.tellp()<<endl;
             tmp=tmp2;
+            p=file.tellg();
         }
-    //    int pp=file.tellp();
-     //   cout<<pp<<endl;
+//        cout<<"after all: "<<endl;
+//        cout<<"g: "<<file.tellg()<<endl;
+//        cout<<"p: "<<file.tellp()<<endl;
         file.clear(ios::goodbit);
-     //   pp=file.tellp();
-    //    cout<<pp<<endl;
         file.write(reinterpret_cast<char *>(&tmp),sizeof(Index_k));
-    //    pp=file.tellp();
-    //    cout<<pp<<endl;
-    //    DisplayIndex_k();
+        file.close();
+        file1.close();
+//        DisplayIndex_k();
     }else{
         strcpy(tmp.keyword, a[0].keyword);
         file.seekp(file.tellg());
@@ -1003,9 +1109,9 @@ void addkeyword(const char *_keyword){
         for(auto & i : a) file1.write(reinterpret_cast<char *>(&i),sizeof(Keyword));
         tmp1.Bid=-1;memset(tmp1.keyword,0,sizeof(tmp1.keyword));
         for(int i=a.size();i<BN;++i) file1.write(reinterpret_cast<char *>(&tmp1),sizeof(Keyword));
+        file.close();
+        file1.close();
     }
-    file.close();
-    file1.close();
 }
 void delkeyword(const char *_keyword){
     fstream file("index_k");
@@ -1045,13 +1151,14 @@ void delkeyword(const char *_keyword){
     }
 
     if(a.empty()){
-        file.seekp(file.tellg());
-        file.seekp(-sizeof(Index_k),ios::cur);
         while(file.read(reinterpret_cast<char *>(&tmp),sizeof(Index_k))){
+            file.seekp(-sizeof(Index_k)*2,ios::cur);
             file.write(reinterpret_cast<char *>(&tmp),sizeof(Index_k));
+            file.seekg(sizeof(Index_k),ios::cur);
         }
         file.clear(ios::goodbit);
         tmp.p=-1;
+        file.seekp(-sizeof(Index_k),ios::cur);
         file.write(reinterpret_cast<char *>(&tmp),sizeof(Index_k));
     }else{
         strcpy(tmp.keyword, a[0].keyword);
