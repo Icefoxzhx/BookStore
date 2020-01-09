@@ -17,7 +17,7 @@
 
 using namespace std;
 #pragma pack(1)
-int const BN=40;
+int const BN=85;
 vector<string>Command;
 
 ///User:
