@@ -25,7 +25,7 @@ struct User_record{
     char s[100]{};
 };
 struct Log{
-    char s[1000]{};
+
 };
 class User{
 public:
@@ -38,8 +38,9 @@ public:
     void display(){
         //cout<<right<<id<<"\t"<<left<<setw(20)<<passwd<<"\t"<<left<<name<<'\t'<<rank<<endl;
         cout<<endl;
-        cout<<id<<'('<<name<<')'<<": "<<endl;
-        ifstream file("user_"+string(id));
+        cout<<name<<endl;
+        string ss="user_"+string(id);
+        ifstream file(ss);
         User_record tmp{};
         while(file.read(reinterpret_cast<char *>(&tmp),sizeof(User_record))){
             cout<<tmp.s<<endl;
@@ -47,11 +48,11 @@ public:
         cout<<endl;
     }
 }Cur_User;
-bool Login(){
+void Login(){
     char _id[32],_passwd[32];
     memset(_id,0,sizeof(_id));
     memset(_passwd,0,sizeof(_passwd));
-    if(Command.size()>3) return false;
+    if(Command.size()>3){puts("Invalid");return;}
     strcpy(_id,Command[1].c_str());
     if(Command.size()>2) strcpy(_passwd,Command[2].c_str());
     else strcpy(_passwd,"");
@@ -62,17 +63,15 @@ bool Login(){
         if(tmp.rank&&strcmp(tmp.id,_id)==0){flag=true;break;}
     }
     Iuser.close();
-    if(!flag||(Cur_User.rank<=tmp.rank&&strcmp(_passwd,tmp.passwd)!=0)) return false;
+    if(!flag||(Cur_User.rank<=tmp.rank&&strcmp(_passwd,tmp.passwd)!=0)) puts("Invalid");
     else Cur_User=tmp;
-    return true;
 }
-bool Logout(){
-    if(Command.size()>1||Cur_User.rank==0) return false;
+void Logout(){
+    if(Command.size()>1||Cur_User.rank==0) puts("Invalid");
     else Cur_User.Logout();
-    return true;
 }
-bool UserAdd(){
-    if(Command.size()!=5||Cur_User.rank<3) return false;
+void UserAdd(){
+    if(Command.size()!=5||Cur_User.rank<3){puts("Invalid");return;}
     char _id[32],_passwd[32],_name[32];
     memset(_id,0,sizeof(_id));
     memset(_passwd,0,sizeof(_passwd));
@@ -81,14 +80,14 @@ bool UserAdd(){
     strcpy(_passwd,Command[2].c_str());
     strcpy(_name,Command[4].c_str());
     int _rank=stoi(Command[3]);
-    if((_rank!=7&&_rank!=3&&_rank!=1)||_rank>=Cur_User.rank) return false;
+    if((_rank!=7&&_rank!=3&&_rank!=1)||_rank>=Cur_User.rank){puts("Invalid");return;}
     fstream IOuser("user");
     User tmp;
     int p=-1;
     while(IOuser.read(reinterpret_cast<char *>(&tmp),sizeof(User))){
         if(tmp.rank&&strcmp(tmp.id,_id)==0){p=IOuser.tellg();break;}
     }
-    if(p!=-1){IOuser.close();return false;}
+    if(p!=-1) puts("Invalid");
     else{
         strcpy(tmp.id,_id);
         strcpy(tmp.passwd,_passwd);
@@ -104,10 +103,9 @@ bool UserAdd(){
         }
     }
     IOuser.close();
-    return true;
 }
-bool RegisterUser(){
-    if(Command.size()!=4) return false;
+void RegisterUser(){
+    if(Command.size()!=4){puts("Invalid");return;}
     char _id[32],_passwd[32],_name[32];
     memset(_id,0,sizeof(_id));
     memset(_passwd,0,sizeof(_passwd));
@@ -121,7 +119,7 @@ bool RegisterUser(){
     while(IOuser.read(reinterpret_cast<char *>(&tmp),sizeof(User))){
         if(tmp.rank&&strcmp(tmp.id,_id)==0){p=IOuser.tellg();break;}
     }
-    if(p!=-1){IOuser.close();return false;}
+    if(p!=-1) puts("Invalid");
     else{
         strcpy(tmp.id,_id);
         strcpy(tmp.passwd,_passwd);
@@ -132,10 +130,9 @@ bool RegisterUser(){
         IOuser.write(reinterpret_cast<char *>(&tmp),sizeof(User));
     }
     IOuser.close();
-    return true;
 }
-bool DeleteUser(){
-    if(Command.size()!=2||Cur_User.rank<7) return false;
+void DeleteUser(){
+    if(Command.size()!=2||Cur_User.rank<7) {puts("Invalid");return;}
     char _id[32];
     strcpy(_id,Command[1].c_str());
     fstream IOuser("user");
@@ -144,18 +141,17 @@ bool DeleteUser(){
     while(IOuser.read(reinterpret_cast<char *>(&tmp),sizeof(User))){
         if(tmp.rank&&strcmp(tmp.id,_id)==0){p=IOuser.tellg();break;}
     }
-    if(p==-1){IOuser.close();return false;}
+    if(p==-1) puts("Invalid");
     else{
         tmp.rank=0;
         IOuser.seekp(p-sizeof(User));
         IOuser.write(reinterpret_cast<char *>(&tmp),sizeof(User));
     }
     IOuser.close();
-    return true;
 }
-bool ChangePasswd(){
-    if(Cur_User.rank<1) return false;
-    if(Command.size()!=3&&Command.size()!=4) return false;
+void ChangePasswd(){
+    if(Cur_User.rank<1){puts("Invalid");return;}
+    if(Command.size()!=3&&Command.size()!=4){puts("Invalid");return;}
     char _id[32],passwd1[32],passwd2[32];
     memset(_id,0,sizeof(_id));
     memset(passwd1,0,sizeof(passwd1));
@@ -168,10 +164,10 @@ bool ChangePasswd(){
     while(IOuser.read(reinterpret_cast<char *>(&tmp),sizeof(User))){
         if(tmp.rank&&strcmp(tmp.id,_id)==0){p=IOuser.tellg();break;}
     }
-    if(p==-1){IOuser.close();return false;}
+    if(p==-1){puts("Invalid");IOuser.close();return;}
     if(Cur_User.rank!=7){
         if(Command.size()!=4||strcmp(tmp.passwd,passwd1)!=0){
-            IOuser.close();return false;
+            puts("Invalid");IOuser.close();return;
         }else strcpy(tmp.passwd,Command[3].c_str());
     }
     if(Cur_User.rank==7){
@@ -181,13 +177,11 @@ bool ChangePasswd(){
     IOuser.seekp(p-sizeof(User));
     IOuser.write(reinterpret_cast<char *>(&tmp),sizeof(User));
     IOuser.close();
-    return true;
 }
 void DisplayUser(){
     cout<<endl;
     ifstream Iuser("user");
     User tmp;
-    cout<<"Employees:"<<endl;
     while(Iuser.read(reinterpret_cast<char *>(&tmp),sizeof(User))){
         tmp.display();
     }
@@ -218,15 +212,16 @@ void DisplayFinance(){
     int cnt=-1;
     while(file.read(reinterpret_cast<char *>(&tmp),sizeof(Finance))){
         ++cnt;
-        cout<<"time: "<<setw(3)<<cnt<<'\t'<<"收入: "<<setw(7)<<fixed<<setprecision(2)<<tmp.in<<'\t';
-        cout<<"支出: "<<setw(7)<<fixed<<setprecision(2)<<tmp.out<<'\t';
-        cout<<"总收入: "<<setw(7)<<fixed<<setprecision(2)<<tmp.tin<<'\t';
-        cout<<"总支出: "<<setw(7)<<fixed<<setprecision(2)<<tmp.tout<<endl;
+        cout<<"time: "<<setw(5)<<cnt<<'\t'<<"收入: "<<fixed<<setprecision(2)<<tmp.in<<'\t';
+        cout<<"支出: "<<fixed<<setprecision(2)<<tmp.out<<'\t';
+        cout<<"总收入: "<<fixed<<setprecision(2)<<tmp.tin<<'\t';
+        cout<<"总支出: "<<fixed<<setprecision(2)<<tmp.tout<<endl;
     }
     cout<<endl;
 }
 
 ///Book:
+int cnt=0;
 int CurBid=-1;
 class Book{
 public:
@@ -246,16 +241,16 @@ public:
         cout<<num<<"本"<<endl;
     }
 };
-//void DisplayBook(){
-//    cout<<endl;
-//    cout<<cnt<<": "<<endl;
-//    ifstream file("book");
-//    Book bk;
-//    while(file.read(reinterpret_cast<char *>(&bk),sizeof(Book))){
-//        bk.display();
-//    }
-//    cout<<endl;
-//}
+void DisplayBook(int cnt){
+    cout<<endl;
+    cout<<cnt<<": "<<endl;
+    ifstream file("book");
+    Book bk;
+    while(file.read(reinterpret_cast<char *>(&bk),sizeof(Book))){
+        bk.display();
+    }
+    cout<<endl;
+}
 struct Isbn{
     char isbn[24]{};
     int Bid;//-1 -- deleted
@@ -328,78 +323,78 @@ struct Index_k{
         strcpy(keyword,_);p=__;
     }
 };
-//void DisplayIndex_k(){
-//    cout<<cnt<<": "<<endl;
-//    ifstream file("index_k");
-//    ifstream file1("keyword");
-//    Index_k tmp;
-//    Keyword tmp1;
-//    int count=0;
-//    while(file.read(reinterpret_cast<char *>(&tmp),sizeof(Index_k))){
-//        if(tmp.p==-1) continue;
-//        ++count;
-//        cout<<count<<'\t'<<tmp.keyword<<'\t'<<tmp.p<<endl;
-//        cout<<endl;
-//        file1.seekg(tmp.p);
-//        for(int i=0;i<BN;++i){
-//            file1.read(reinterpret_cast<char *>(&tmp1),sizeof(Keyword));
-//            if(tmp1.Bid==-1) break;
-//            cout<<tmp1.keyword<<'\t'<<tmp1.Bid<<endl;
-//        }
-//        cout<<endl;
-//    }
-//    cout<<endl;
-//    file.close();
-//    file1.close();
-//}
-//void DisplayIndex_n(){
-//    cout<<cnt<<": "<<endl;
-//    ifstream file("index_n");
-//    ifstream file1("name");
-//    Index_n tmp;
-//    Name tmp1;
-//    int count=0;
-//    while(file.read(reinterpret_cast<char *>(&tmp),sizeof(Index_n))){
-//        if(tmp.p==-1) continue;
-//        ++count;
-//        cout<<count<<'\t'<<tmp.name<<'\t'<<tmp.p<<endl;
-//        cout<<endl;
-//        file1.seekg(tmp.p);
-//        for(int i=0;i<BN;++i){
-//            file1.read(reinterpret_cast<char *>(&tmp1),sizeof(Name));
-//            if(tmp1.Bid==-1) break;
-//            cout<<tmp1.name<<'\t'<<tmp1.Bid<<endl;
-//        }
-//        cout<<endl;
-//    }
-//    cout<<endl;
-//    file.close();
-//    file1.close();
-//}
-//void DisplayIndex_a(){
-//    cout<<cnt<<": "<<endl;
-//    ifstream file("index_a");
-//    ifstream file1("author");
-//    Index_a tmp;
-//    Author tmp1;
-//    int count=0;
-//    while(file.read(reinterpret_cast<char *>(&tmp),sizeof(Index_a))){
-//        if(tmp.p==-1) continue;
-//        ++count;
-//        cout<<count<<'\t'<<tmp.author<<'\t'<<tmp.p<<endl;
-//        cout<<endl;
-//        file1.seekg(tmp.p);
-//        for(int i=0;i<BN;++i){
-//            file1.read(reinterpret_cast<char *>(&tmp1),sizeof(Author));
-//            if(tmp1.Bid==-1) break;
-//            cout<<tmp1.author<<'\t'<<tmp1.Bid<<endl;
-//        }
-//        cout<<endl;
-//    }
-//    cout<<endl;
-//    file.close();
-//    file1.close();
-//}
+void DisplayIndex_k(){
+    cout<<cnt<<": "<<endl;
+    ifstream file("index_k");
+    ifstream file1("keyword");
+    Index_k tmp;
+    Keyword tmp1;
+    int count=0;
+    while(file.read(reinterpret_cast<char *>(&tmp),sizeof(Index_k))){
+        if(tmp.p==-1) continue;
+        ++count;
+        cout<<count<<'\t'<<tmp.keyword<<'\t'<<tmp.p<<endl;
+        cout<<endl;
+        file1.seekg(tmp.p);
+        for(int i=0;i<BN;++i){
+            file1.read(reinterpret_cast<char *>(&tmp1),sizeof(Keyword));
+            if(tmp1.Bid==-1) break;
+            cout<<tmp1.keyword<<'\t'<<tmp1.Bid<<endl;
+        }
+        cout<<endl;
+    }
+    cout<<endl;
+    file.close();
+    file1.close();
+}
+void DisplayIndex_n(){
+    cout<<cnt<<": "<<endl;
+    ifstream file("index_n");
+    ifstream file1("name");
+    Index_n tmp;
+    Name tmp1;
+    int count=0;
+    while(file.read(reinterpret_cast<char *>(&tmp),sizeof(Index_n))){
+        if(tmp.p==-1) continue;
+        ++count;
+        cout<<count<<'\t'<<tmp.name<<'\t'<<tmp.p<<endl;
+        cout<<endl;
+        file1.seekg(tmp.p);
+        for(int i=0;i<BN;++i){
+            file1.read(reinterpret_cast<char *>(&tmp1),sizeof(Name));
+            if(tmp1.Bid==-1) break;
+            cout<<tmp1.name<<'\t'<<tmp1.Bid<<endl;
+        }
+        cout<<endl;
+    }
+    cout<<endl;
+    file.close();
+    file1.close();
+}
+void DisplayIndex_a(){
+    cout<<cnt<<": "<<endl;
+    ifstream file("index_a");
+    ifstream file1("author");
+    Index_a tmp;
+    Author tmp1;
+    int count=0;
+    while(file.read(reinterpret_cast<char *>(&tmp),sizeof(Index_a))){
+        if(tmp.p==-1) continue;
+        ++count;
+        cout<<count<<'\t'<<tmp.author<<'\t'<<tmp.p<<endl;
+        cout<<endl;
+        file1.seekg(tmp.p);
+        for(int i=0;i<BN;++i){
+            file1.read(reinterpret_cast<char *>(&tmp1),sizeof(Author));
+            if(tmp1.Bid==-1) break;
+            cout<<tmp1.author<<'\t'<<tmp1.Bid<<endl;
+        }
+        cout<<endl;
+    }
+    cout<<endl;
+    file.close();
+    file1.close();
+}
 int findisbn(const char *_isbn){
     ifstream file("index_i");
     ifstream file1("isbn");
@@ -1178,23 +1173,22 @@ void delkeyword(const char *_keyword){
     file.close();
     file1.close();
 }
-bool Select(){
-    if(Command.size()!=2||Cur_User.rank<3) return false;
+void Select(){
+    if(Command.size()!=2||Cur_User.rank<3){puts("Invalid");return;}
     char _isbn[22];
     memset(_isbn,0,sizeof(_isbn));
     strcpy(_isbn,Command[1].c_str());
     CurBid=findisbn(_isbn);
-    if(CurBid!=-1) return true;
+    if(CurBid!=-1) return;
     ofstream file("book",ios::app);
     CurBid=file.tellp()/sizeof(Book);
     Book bk(_isbn);
     file.write(reinterpret_cast<char *>(&bk),sizeof(Book));
     file.close();
     addisbn(_isbn);
-    return true;
 }
-bool Modify(){
-    if(Cur_User.rank<3||CurBid==-1) return false;
+void Modify(){
+    if(Cur_User.rank<3||CurBid==-1){puts("Invalid");return;}
 
     fstream file("book");
     Book bk;
@@ -1221,16 +1215,16 @@ bool Modify(){
         }
         if(Command[i].find("-keyword")!=string::npos) continue;
         if(Command[i].find("-price")!=string::npos) continue;
-        file.close();return false;
+        puts("Invalid");file.close();return;
     }
 
     for(int i=1;i<Command.size();++i){
         if(Command[i].find("-ISBN")!=string::npos){
-            string ss=Command[i].substr(6);
-            if(strcmp(ss.c_str(),bk.isbn)==0) continue;
-            addisbn(ss.c_str());
+            Command[i]=Command[i].substr(6);
+            if(strcmp(Command[i].c_str(),bk.isbn)==0) continue;
+            addisbn(Command[i].c_str());
             delisbn(bk.isbn);
-            strcpy(bk.isbn,ss.c_str());
+            strcpy(bk.isbn,Command[i].c_str());
             continue;
         }
         if(Command[i].find("-name")!=string::npos){
@@ -1274,10 +1268,10 @@ bool Modify(){
             continue;
         }
         if(Command[i].find("-keyword")!=string::npos){
-            string ss=Command[i].substr(10);
-            ss.pop_back();
-            string ss1=ss;
+            Command[i]=Command[i].substr(10);
+            Command[i].pop_back();
             map<string,int>mp;
+            string ss=Command[i];
             int l=0,r=0;
             while((r=ss.find('|',l))!=string::npos){
                 mp[ss.substr(l,r-l)]=1;
@@ -1297,22 +1291,21 @@ bool Modify(){
                 if(it.second>0) addkeyword(it.first.c_str());
                 if(it.second<0) delkeyword(it.first.c_str());
             }
-            strcpy(bk.keyword,ss1.c_str());
+            strcpy(bk.keyword,Command[i].c_str());
             continue;
         }
         if(Command[i].find("-price")!=string::npos) {
-            string ss = Command[i].substr(7);
-            bk.price=stod(ss);
+            Command[i] = Command[i].substr(7);
+            bk.price=stod(Command[i]);
             continue;
         }
     }
     file.seekp(CurBid*sizeof(Book));
     file.write(reinterpret_cast<char *>(&bk),sizeof(Book));
     file.close();
-    return true;
 }
-bool Import(){
-    if(Cur_User.rank<3||CurBid==-1||Command.size()!=3) return false;
+void Import(){
+    if(Cur_User.rank<3||CurBid==-1||Command.size()!=3){puts("Invalid");return;}
     fstream file("book");
     Book bk;
     file.seekg(CurBid*sizeof(Book));
@@ -1331,12 +1324,11 @@ bool Import(){
     file.seekp(0,ios::end);
     file.write(reinterpret_cast<char *>(&tmp),sizeof(Finance));
     file.close();
-    return true;
 }
-bool Buy(){
-    if(Cur_User.rank<1||Command.size()!=3) return false;
+void Buy(){
+    if(Cur_User.rank<1||Command.size()!=3){puts("Invalid");return;}
     int p=findisbn(Command[1].c_str());
-    if(p==-1) return false;
+    if(p==-1){puts("Invalid");return;}
 
     fstream file("book");
     Book bk;
@@ -1344,7 +1336,7 @@ bool Buy(){
     file.read(reinterpret_cast<char *>(&bk),sizeof(Book));
     int q=stoi(Command[2]);
     double pri=bk.price;
-    if(bk.num<q) {file.close();return false;}
+    if(bk.num<q) {file.close();puts("Invalid");return;}
     bk.num-=q;
     file.seekp(p*sizeof(Book));
     file.write(reinterpret_cast<char *>(&bk),sizeof(Book));
@@ -1359,25 +1351,23 @@ bool Buy(){
     file.seekp(0,ios::end);
     file.write(reinterpret_cast<char *>(&tmp),sizeof(Finance));
     file.close();
-    return true;
 }
-bool Show_finance(){
-    if(Cur_User.rank!=7||Command.size()>3) return false;
+void Show_finance(){
+    if(Cur_User.rank!=7||Command.size()>3){puts("Invalid");return;}
     ifstream file("finance");
     file.seekg(-sizeof(Finance),ios::end);
     Finance tmp,tmp1;
     file.read(reinterpret_cast<char *>(&tmp),sizeof(Finance));
     if(Command.size()==2){
-        tmp.display();return true;
+        tmp.display();return;
     }
     int x=stoi(Command[2]);
     file.seekg(-sizeof(Finance)*(x+1),ios::end);
     file.read(reinterpret_cast<char *>(&tmp1),sizeof(Finance));
     tmp-=tmp1;
     tmp.display();
-    return true;
 }
-bool Show(){
+void Show(){
     if(Command.size()==1){
         ifstream file("book");
         vector<Book>a;
@@ -1386,98 +1376,85 @@ bool Show(){
             a.push_back(bk);
         sort(a.begin(),a.end());
         for(auto i :a) i.display();
-        return true;
+        return;
     }
     if(Command[1]=="finance"){
         Show_finance();
-        return true;
+        return;
     }
-    if(Cur_User.rank<1) return false;
+    if(Cur_User.rank<1){puts("Invalid");return;}
     if(Command[1].find("-ISBN")!=string::npos){
-        string ss=Command[1].substr(6);
-        int p=findisbn(ss.c_str());
-        if(p==-1) return true;
+        Command[1]=Command[1].substr(6);
+        int p=findisbn(Command[1].c_str());
+        if(p==-1) return;
         ifstream file("book");
         Book bk;
         file.seekg(p*sizeof(Book));
         file.read(reinterpret_cast<char *>(&bk),sizeof(Book));
         bk.display();
-        return true;
+        return;
     }
     if(Command[1].find("-name")!=string::npos){
-        string ss=Command[1];
         if(Command[1].find('\"',7)==string::npos){
             int j=2;
             while(j<Command.size()&&Command[j].find('\"')==string::npos){
-                ss+=" ";
-                ss+=Command[j];
+                Command[1]+=" ";
+                Command[1]+=Command[j];
                 ++j;
             }
-            ss+=" ";
-            ss+=Command[j];
+            Command[1]+=" ";
+            Command[1]+=Command[j];
         }
-        ss=ss.substr(7);
-        ss.pop_back();
-        findname(ss.c_str());
-        return true;
+        Command[1]=Command[1].substr(7);
+        Command[1].pop_back();
+        findname(Command[1].c_str());
+        return;
     }
     if(Command[1].find("-author")!=string::npos){
-        string ss=Command[1];
         if(Command[1].find('\"',9)==string::npos){
             int j=2;
             while(j<Command.size()&&Command[j].find('\"')==string::npos){
-                ss+=" ";
-                ss+=Command[j];
+                Command[1]+=" ";
+                Command[1]+=Command[j];
                 ++j;
             }
-            ss+=" ";
-            ss+=Command[j];
+            Command[1]+=" ";
+            Command[1]+=Command[j];
         }
-        ss=ss.substr(9);
-        ss.pop_back();
-        findauthor(ss.c_str());
-        return true;
+        Command[1]=Command[1].substr(9);
+        Command[1].pop_back();
+        findauthor(Command[1].c_str());
+        return;
     }
     if(Command[1].find("-keyword")!=string::npos){
-        string ss=Command[1].substr(10);
-        ss.pop_back();
-        findkeyword(ss.c_str());
-        return true;
+        Command[1]=Command[1].substr(10);
+        Command[1].pop_back();
+        findkeyword(Command[1].c_str());
+        return;
     }
-    return false;
+    puts("Invalid");
 }
-bool Report(){
-    if(Command.size()!=2) return false;
+void Report(){
+    if(Command.size()!=2){puts("Invalid");return;}
     if(Command[1]=="finance"){
-        if(Cur_User.rank!=7) return false;
+        if(Cur_User.rank!=7){puts("Invalid");return;}
         DisplayFinance();
-        return true;
+        return;
     }
     if(Command[1]=="myself"){
-        if(Cur_User.rank<3) return false;
+        if(Cur_User.rank<3){puts("Invalid");return;}
         Cur_User.display();
-        return true;
+        return;
     }
     if(Command[1]=="employee"){
-        if(Cur_User.rank!=7) return false;
+        if(Cur_User.rank!=7){puts("Invalid");return;}
         DisplayUser();
-        return true;
+        return;
     }
-    return false;
 }
-bool DisplayLog(){
-    if(Cur_User.rank<7) return false;
-    cout<<"Log:"<<endl;
-    ifstream file("log");
-    Log tmp;
-    int cnt=-1;
-    while(file.read(reinterpret_cast<char *>(&tmp),sizeof(Log))){
-        ++cnt;
-        cout<<cnt<<": "<<tmp.s<<endl;
-    }
-    cout<<endl;
+void DisplayLog(){//??
+    DisplayUser();
     DisplayFinance();
-    return true;
 }
 void Init(){
     strcpy(Cur_User.id,"root");
@@ -1539,385 +1516,39 @@ void Init(){
     Ofile.write(reinterpret_cast<char *>(&tmp8),sizeof(Finance));
     Ofile.close();
 }
-void Work1(istream &Input){
-    ifstream In("user");
-    In.read(reinterpret_cast<char *>(&Cur_User),sizeof(User));
-    while(true){
-        //    DisplayUser(cnt++);
-        //    DisplayBook(cnt++);
-        //    DisplayFinance(cnt++);
-        string command,op;
-        getline(Input,command);
-        stringstream ss(command);
-        Command.clear();
-        while(ss>>op) Command.push_back(op);
-        if(Command[0]=="load"){
-            if(Cur_User.rank!=7||Command.size()!=2){puts("Invalid");continue;}
-            ifstream file(Command[1]);
-            Work1(file);
-            file.close();
-            continue;
-        }
-        if(Command[0]=="exit") break;
-        if(Command[0]=="su"){
-            if(!Login()){puts("Invalid");continue;}
-            ofstream file("log",ios::app);
-            Log log;
-            command=string(Cur_User.id)+" log in\n";
-            strcpy(log.s,command.c_str());
-            file.write(reinterpret_cast<char *>(&log),sizeof(Log));
-            file.close();
-            continue;
-        }
-        if(Command[0]=="logout"){
-            if(!Logout()){puts("Invalid");continue;}
-            ofstream file("log",ios::app);
-            Log log;
-            command=string(Cur_User.id)+" log out\n";
-            strcpy(log.s,command.c_str());
-            file.write(reinterpret_cast<char *>(&log),sizeof(Log));
-            file.close();
-            continue;
-        }
-        if(Command[0]=="useradd"){
-            if(!UserAdd()){puts("Invalid");continue;}
-            ofstream file("user_"+string(Cur_User.id),ios::app);
-            User_record tmp;
-            strcpy(tmp.s,command.c_str());
-            file.write(reinterpret_cast<char *>(&tmp),sizeof(User_record));
-            file.close();
-            file.open("log",ios::app);
-            Log log;
-            command=string(Cur_User.id)+": "+command;
-            strcpy(log.s,command.c_str());
-            file.write(reinterpret_cast<char *>(&log),sizeof(Log));
-            file.close();
-            continue;
-        }
-        if(Command[0]=="register"){
-            if(!RegisterUser()){puts("Invalid");continue;}
-            ofstream file("log",ios::app);
-            Log log;
-            strcpy(log.s,command.c_str());
-            file.write(reinterpret_cast<char *>(&log),sizeof(Log));
-            file.close();
-            continue;
-        }
-        if(Command[0]=="delete"){
-            if(!DeleteUser()){puts("Invalid");continue;}
-            ofstream file("log",ios::app);
-            Log log;
-            strcpy(log.s,command.c_str());
-            file.write(reinterpret_cast<char *>(&log),sizeof(Log));
-            file.close();
-            continue;
-        }
-        if(Command[0]=="passwd"){
-            if(!ChangePasswd()){puts("Invalid");continue;}
-            ofstream file("user_"+string(Cur_User.id),ios::app);
-            User_record tmp;
-            strcpy(tmp.s,command.c_str());
-            file.write(reinterpret_cast<char *>(&tmp),sizeof(User_record));
-            file.close();
-            file.open("log",ios::app);
-            Log log;
-            command=string(Cur_User.id)+": "+command;
-            strcpy(log.s,command.c_str());
-            file.write(reinterpret_cast<char *>(&log),sizeof(Log));
-            file.close();
-            continue;
-        }
-        if(Command[0]=="select"){
-            if(!Select()){puts("Invalid");continue;}
-            ofstream file("user_"+string(Cur_User.id),ios::app);
-            User_record tmp;
-            strcpy(tmp.s,command.c_str());
-            file.write(reinterpret_cast<char *>(&tmp),sizeof(User_record));
-            file.close();
-            file.open("log",ios::app);
-            Log log;
-            command=string(Cur_User.id)+": "+command;
-            strcpy(log.s,command.c_str());
-            file.write(reinterpret_cast<char *>(&log),sizeof(Log));
-            file.close();
-            continue;
-        }
-        if(Command[0]=="modify"){
-            if(!Modify()){puts("Invalid");continue;}
-            ofstream file("user_"+string(Cur_User.id),ios::app);
-            User_record tmp;
-            strcpy(tmp.s,command.c_str());
-            file.write(reinterpret_cast<char *>(&tmp),sizeof(User_record));
-            file.close();
-            file.open("log",ios::app);
-            Log log;
-            command=string(Cur_User.id)+": "+command;
-            strcpy(log.s,command.c_str());
-            file.write(reinterpret_cast<char *>(&log),sizeof(Log));
-            file.close();
-            continue;
-        }
-        if(Command[0]=="import"){
-            if(!Import()){puts("Invalid");continue;}
-            ofstream file("user_"+string(Cur_User.id),ios::app);
-            User_record tmp;
-            strcpy(tmp.s,command.c_str());
-            file.write(reinterpret_cast<char *>(&tmp),sizeof(User_record));
-            file.close();
-            file.open("log",ios::app);
-            Log log;
-            command=string(Cur_User.id)+": "+command;
-            strcpy(log.s,command.c_str());
-            file.write(reinterpret_cast<char *>(&log),sizeof(Log));
-            file.close();
-            continue;
-        }
-        if(Command[0]=="show"){
-            if(!Show()){puts("Invalid");continue;}
-            ofstream file("user_"+string(Cur_User.id),ios::app);
-            User_record tmp;
-            strcpy(tmp.s,command.c_str());
-            file.write(reinterpret_cast<char *>(&tmp),sizeof(User_record));
-            file.close();
-            file.open("log",ios::app);
-            Log log;
-            command=string(Cur_User.id)+": "+command;
-            strcpy(log.s,command.c_str());
-            file.write(reinterpret_cast<char *>(&log),sizeof(Log));
-            file.close();
-            continue;
-        }
-        if(Command[0]=="buy"){
-            if(!Buy()){puts("Invalid");continue;}
-            ofstream file("user_"+string(Cur_User.id),ios::app);
-            User_record tmp;
-            strcpy(tmp.s,command.c_str());
-            file.write(reinterpret_cast<char *>(&tmp),sizeof(User_record));
-            file.close();
-            file.open("log",ios::app);
-            Log log;
-            command=string(Cur_User.id)+": "+command;
-            strcpy(log.s,command.c_str());
-            file.write(reinterpret_cast<char *>(&log),sizeof(Log));
-            file.close();
-            continue;
-        }
-        if(Command[0]=="report"){
-            if(!Report()) puts("Invalid");
-            continue;
-        }
-        if(Command[0]=="log"){
-            if(!DisplayLog()) puts("Invalid");
-            continue;
-        }
-        puts("Invalid");
-    }
-}
 void Work(istream &Input){
     ifstream In("user");
     In.read(reinterpret_cast<char *>(&Cur_User),sizeof(User));
+    int cnt=0;
     while(true){
         //    DisplayUser(cnt++);
         //    DisplayBook(cnt++);
         //    DisplayFinance(cnt++);
-        cout<<endl;
-        switch(Cur_User.rank){
-            case 0: cout<<"你好,陌生人,有什么事么 "<<endl;break;
-            case 1: cout<<"你好,顾客"<<Cur_User.name<<"(权限1),有什么可以帮您的吗 "<<endl;break;
-            case 3: cout<<"你好,员工"<<Cur_User.name<<"(权限3),有何贵干 "<<endl;break;
-            case 7: cout<<"老板好,请指示 "<<endl;break;
-        }
-        cout<<endl;
-        cout<<"请按照以下命令格式输入："<<endl<<endl;
-        cout<<"exit #退出程序"<<endl;
-        cout<<"su [user-id] [passwd] #登录到某用户，从高权限用户登录到低权限不需填写密码"<<endl;
-        cout<<"register [user-id] [passwd] [name] #注册一个带有这些信息的权限1用户"<<endl;
-        if(Cur_User.rank>=1){
-            cout<<"logout #返回到未登录状态"<<endl;
-            cout<<"useradd [user-id] [passwd] [7/3/1] [name] #增加一个指定权限的用户，不能创建不小于自己权限的账户"<<endl;
-            cout<<"passwd [user-id] [old-passwd(if not root)] [new-passwd] #root不需要填写旧密码，其余账户需要"<<endl;
-            cout<<"show -ISBN=[ISBN] -name=[name] -author=[author] -keyword=[keyword] #显示所匹配书籍，注意该命令只支持单关键字"<<endl;
-            cout<<"buy [ISBN] [quantity] #购买该ISBN号的图书[quantity]本"<<endl;
-        }
-        if(Cur_User.rank>=3){
-            cout<<"import [quantity] [cost_price(in total)] #以总共[cost_price]的价格进[quantity]本选中的书"<<endl;
-            cout<<"select [ISBN] #选定ISBN为指定值的图书，若不存在则创建该ISBN的书"<<endl;
-            cout<<"modify -ISBN=[ISBN] -name=[name] -author=[author] -keyword=[keyword] -price=[price] #更新上次选中的书至新的信息"<<endl;
-            cout<<"report myself #显示自己的工作情况"<<endl;
-        }
-        if(Cur_User.rank>=7){
-            cout<<"load [destination] #读文件[destination]进行批处理"<<endl;
-            cout<<"delete [user-id] #删除某用户"<<endl;
-            cout<<"show finance [time] #输出近[time]次操作的收入支出,若省略参数则输出总的收入支出"<<endl;
-            cout<<"report finance #财务报表"<<endl;
-            cout<<"report employee #员工工作情况表"<<endl;
-            cout<<"log #日志"<<endl;
-        }
-        cout<<endl;
-        string command,op;
-        getline(Input,command);
-        stringstream ss(command);
+        string op;
+        getline(Input,op);
+        stringstream ss(op);
         Command.clear();
         while(ss>>op) Command.push_back(op);
         if(Command[0]=="load"){
             if(Cur_User.rank!=7||Command.size()!=2){puts("Invalid");continue;}
             ifstream file(Command[1]);
-            Work1(file);
+            Work(file);
             file.close();
-            continue;
         }
         if(Command[0]=="exit") break;
-        if(Command[0]=="su"){
-            if(!Login()){puts("Invalid");continue;}
-            ofstream file("log",ios::app);
-            Log log;
-            command=string(Cur_User.id)+" log in\n";
-            strcpy(log.s,command.c_str());
-            file.write(reinterpret_cast<char *>(&log),sizeof(Log));
-            file.close();
-            continue;
-        }
-        if(Command[0]=="logout"){
-            if(!Logout()){puts("Invalid");continue;}
-            ofstream file("log",ios::app);
-            Log log;
-            command=string(Cur_User.id)+" log out\n";
-            strcpy(log.s,command.c_str());
-            file.write(reinterpret_cast<char *>(&log),sizeof(Log));
-            file.close();
-            continue;
-        }
-        if(Command[0]=="useradd"){
-            if(!UserAdd()){puts("Invalid");continue;}
-            ofstream file("user_"+string(Cur_User.id),ios::app);
-            User_record tmp;
-            strcpy(tmp.s,command.c_str());
-            file.write(reinterpret_cast<char *>(&tmp),sizeof(User_record));
-            file.close();
-            file.open("log",ios::app);
-            Log log;
-            command=string(Cur_User.id)+": "+command;
-            strcpy(log.s,command.c_str());
-            file.write(reinterpret_cast<char *>(&log),sizeof(Log));
-            file.close();
-            continue;
-        }
-        if(Command[0]=="register"){
-            if(!RegisterUser()){puts("Invalid");continue;}
-            ofstream file("log",ios::app);
-            Log log;
-            strcpy(log.s,command.c_str());
-            file.write(reinterpret_cast<char *>(&log),sizeof(Log));
-            file.close();
-            continue;
-        }
-        if(Command[0]=="delete"){
-            if(!DeleteUser()){puts("Invalid");continue;}
-            ofstream file("log",ios::app);
-            Log log;
-            strcpy(log.s,command.c_str());
-            file.write(reinterpret_cast<char *>(&log),sizeof(Log));
-            file.close();
-            continue;
-        }
-        if(Command[0]=="passwd"){
-            if(!ChangePasswd()){puts("Invalid");continue;}
-            ofstream file("user_"+string(Cur_User.id),ios::app);
-            User_record tmp;
-            strcpy(tmp.s,command.c_str());
-            file.write(reinterpret_cast<char *>(&tmp),sizeof(User_record));
-            file.close();
-            file.open("log",ios::app);
-            Log log;
-            command=string(Cur_User.id)+": "+command;
-            strcpy(log.s,command.c_str());
-            file.write(reinterpret_cast<char *>(&log),sizeof(Log));
-            file.close();
-            continue;
-        }
-        if(Command[0]=="select"){
-            if(!Select()){puts("Invalid");continue;}
-            ofstream file("user_"+string(Cur_User.id),ios::app);
-            User_record tmp;
-            strcpy(tmp.s,command.c_str());
-            file.write(reinterpret_cast<char *>(&tmp),sizeof(User_record));
-            file.close();
-            file.open("log",ios::app);
-            Log log;
-            command=string(Cur_User.id)+": "+command;
-            strcpy(log.s,command.c_str());
-            file.write(reinterpret_cast<char *>(&log),sizeof(Log));
-            file.close();
-            continue;
-        }
-        if(Command[0]=="modify"){
-            if(!Modify()){puts("Invalid");continue;}
-            ofstream file("user_"+string(Cur_User.id),ios::app);
-            User_record tmp;
-            strcpy(tmp.s,command.c_str());
-            file.write(reinterpret_cast<char *>(&tmp),sizeof(User_record));
-            file.close();
-            file.open("log",ios::app);
-            Log log;
-            command=string(Cur_User.id)+": "+command;
-            strcpy(log.s,command.c_str());
-            file.write(reinterpret_cast<char *>(&log),sizeof(Log));
-            file.close();
-            continue;
-        }
-        if(Command[0]=="import"){
-            if(!Import()){puts("Invalid");continue;}
-            ofstream file("user_"+string(Cur_User.id),ios::app);
-            User_record tmp;
-            strcpy(tmp.s,command.c_str());
-            file.write(reinterpret_cast<char *>(&tmp),sizeof(User_record));
-            file.close();
-            file.open("log",ios::app);
-            Log log;
-            command=string(Cur_User.id)+": "+command;
-            strcpy(log.s,command.c_str());
-            file.write(reinterpret_cast<char *>(&log),sizeof(Log));
-            file.close();
-            continue;
-        }
-        if(Command[0]=="show"){
-            if(!Show()){puts("Invalid");continue;}
-            ofstream file("user_"+string(Cur_User.id),ios::app);
-            User_record tmp;
-            strcpy(tmp.s,command.c_str());
-            file.write(reinterpret_cast<char *>(&tmp),sizeof(User_record));
-            file.close();
-            file.open("log",ios::app);
-            Log log;
-            command=string(Cur_User.id)+": "+command;
-            strcpy(log.s,command.c_str());
-            file.write(reinterpret_cast<char *>(&log),sizeof(Log));
-            file.close();
-            continue;
-        }
-        if(Command[0]=="buy"){
-            if(!Buy()){puts("Invalid");continue;}
-            ofstream file("user_"+string(Cur_User.id),ios::app);
-            User_record tmp;
-            strcpy(tmp.s,command.c_str());
-            file.write(reinterpret_cast<char *>(&tmp),sizeof(User_record));
-            file.close();
-            file.open("log",ios::app);
-            Log log;
-            command=string(Cur_User.id)+": "+command;
-            strcpy(log.s,command.c_str());
-            file.write(reinterpret_cast<char *>(&log),sizeof(Log));
-            file.close();
-            continue;
-        }
-        if(Command[0]=="report"){
-            if(!Report()) puts("Invalid");
-            continue;
-        }
-        if(Command[0]=="log"){
-            if(!DisplayLog()) puts("Invalid");
-            continue;
-        }
+        if(Command[0]=="su"){Login();continue;}
+        if(Command[0]=="logout"){Logout();continue;}
+        if(Command[0]=="useradd"){UserAdd();continue;}
+        if(Command[0]=="register"){RegisterUser();continue;}
+        if(Command[0]=="delete"){DeleteUser();continue;}
+        if(Command[0]=="passwd"){ChangePasswd();continue;}
+        if(Command[0]=="select"){Select();continue;}
+        if(Command[0]=="modify"){Modify();continue;}
+        if(Command[0]=="import"){Import();continue;}
+        if(Command[0]=="show"){Show();continue;}
+        if(Command[0]=="buy"){Buy();continue;}
+        if(Command[0]=="report"){Report();continue;}
+        if(Command[0]=="log"){DisplayLog();continue;}
         puts("Invalid");
     }
 }
@@ -1932,3 +1563,4 @@ int main(){
     else Work(cin);
     return 0;
 }
+
